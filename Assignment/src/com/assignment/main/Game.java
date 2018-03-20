@@ -4,6 +4,7 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
+import java.util.Random;
 
 public class Game extends Canvas implements Runnable
 {
@@ -13,12 +14,23 @@ public class Game extends Canvas implements Runnable
 	 */
 	private static final long serialVersionUID = 4392619180354507678L;
 	
-	public static final int WIDTH = 1280, HEIGHT = WIDTH / 16*9;	//forces a 16:9 window
+	public static final int WIDTH = 1280, HEIGHT = WIDTH / 16 * 9;	//forces a 16:9 window
 	private Thread thread;
 	private boolean running = false;
+	Random spawn;
+	private Handler handler;
+	
 	public Game()
 	{
 		new Window(WIDTH, HEIGHT, "Game", this);
+		
+		handler = new Handler();
+		spawn = new Random();
+		int i;
+		for(i = 0; i < 10; i++)
+		{
+			handler.addObject(new Enemy(spawn.nextInt(WIDTH), spawn.nextInt(HEIGHT), ID.Enemy));
+		}
 		
 	}
 	
@@ -92,7 +104,7 @@ public class Game extends Canvas implements Runnable
 	//Everything in the game that updates
 	private void update() 
 	{
-		
+		handler.update();
 	}
 	
 	//Everything in the game that renders
@@ -110,6 +122,8 @@ public class Game extends Canvas implements Runnable
 		
 		g.setColor(Color.DARK_GRAY);
 		g.fillRect(0, 0, WIDTH, HEIGHT);
+		
+		handler.render(g);
 		
 		g.dispose();
 		bs.show();
