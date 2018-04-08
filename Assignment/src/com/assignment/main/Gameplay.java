@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 
+
 //Gameplay and settings
 public class Gameplay extends JPanel implements KeyListener, ActionListener 
 {
@@ -14,7 +15,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
 	 */
 	private static final long serialVersionUID = 1L;
 
-    public static JPanel sliderPanel = new JPanel();
 
     private int width = 1280;
     private int height = 720;
@@ -28,8 +28,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     private int targetSize = 50;
     private int desiredFPS = 60;
     private int difTime = 300;
-    private int maxTime = 1000;
+    private int maxTime = 1500;
     private int lives = 5;
+    
 
     private float growthRate = 0.5f;
 
@@ -47,34 +48,47 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     private int delay = (int) ((1000/desiredFPS));
 
     private Point mousePos = new Point(0, 0);
-
+    
     private ArrayList<Circle> circles = new ArrayList<>();
+    
+    private boolean isPaused = false;
 
     public Gameplay()
     {
+    	initSettings();
         initListeners();
         addKeyListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
-        reset();
+        //reset();
         timer = new Timer(delay, this);
         timer.start();
     }
 
-    public void paint(Graphics g)
+	public void paint(Graphics g)
     {
-    	
-        g.setColor(Color.DARK_GRAY);
-        g.fillRect(1,1, (width*3/4), 717);
-
+		
+        g.setColor(new Color(40, 40, 40));
+        g.fillRect(0,0, 1280, 720);
+      
         // Labels
-        g.setColor(Color.white);
-        g.drawString("Frames: " + frames, 5, 15);
-        g.drawString("Time: " + (System.currentTimeMillis() - startTime)/1000, 5, 25);
-        g.drawString("Score: " + score, 5, 35);
-        g.drawString("Combo: " + combo, 5, 45);
-        g.drawString("Lives: " + lives, 5, 55);
-
+        g.setColor(Color.BLACK);
+        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        g.drawString("Frames: " + frames, 970, 40);
+        g.drawString("Time: " + (System.currentTimeMillis() - startTime)/1000, 970, 70);
+        g.drawString("Score: " + score, 970, 100);
+        g.drawString("Combo: " + combo, 970, 130);
+        g.drawString("Lives: " + lives, 970, 160);
+        g.drawString("Click the circles", 970, 220); 
+        g.drawString("Spacebar to pause ", 970, 250); 
+        if(lives <= 0)
+        {
+            g.drawString("Game Over", width*3/4*1/2, height/2);
+            g.drawString("Click on the window to go again", width*3/4*1/2-100, height/2+24);
+        }
+        //Play Area Border
+        g.setColor(Color.BLACK);
+        g.fillRect(width*3/4,0, 1, 720);
 
         // Circles
         for(int i = 0; i < circles.size(); i++)
@@ -83,7 +97,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             g.setColor(c.getColor());
             g.fillOval(c.getPosition().x, c.getPosition().y, (int) c.getRadii()*2, (int) c.getRadii()*2);
         }
-
         g.dispose();
     }
 
@@ -96,7 +109,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             if(length <= c.getRadii()+2)
             {
                 //System.out.println("Circle hit");
-                score += 1;
+                score += 1 * combo;
                 combo++;
                 c = null;
                 circles.remove(i);
@@ -152,13 +165,15 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     }
 
     @Override
-    public void actionPerformed(ActionEvent e) {
+    public void actionPerformed(ActionEvent e) 
+    {
         timer.start();
         //frames = (float) (((System.currentTimeMillis() - frameTime)));
         //frames /= 1000;
         //frames = Math.round(1/frames);
         frameCount++;
-        if(System.currentTimeMillis() - frameTime >= 1000){
+        if(System.currentTimeMillis() - frameTime >= 1000)
+        {
             //System.out.println("Frames: " + frameCount);
             frames = frameCount;
             frameCount = 0;
@@ -166,10 +181,98 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         }
         summonCircle();
         updateCircle();
-        repaint(0, 0, width*3/4, height);
+        repaint();
         if(lives <= 0)
-            reset();
+        {
+        	circles.clear();
+            timer.stop();
+        }
+
     }
+    
+    public void initSettings()
+    {
+    	boolean isValidNumber = false;
+    	
+    	JTextField settingSpeed = new JTextField("1");
+    	JTextField settingSize = new JTextField("50");
+    	JTextField settingMin = new JTextField("300");
+    	JTextField settingMax = new JTextField("1500");
+    	Object[] settingInfo = {
+    			"Enter the circle growth rate multiplier (Default = 1)", settingSpeed,
+    			"Enter the circle size (Default = 50)", settingSize,
+    			"Enter the minimum time (ms) before next circle (Default = 300)", settingMin,
+    			"Enter the maximum time (ms) before next circle (Default = 1500)", settingMax,
+    	};
+    	
+    	int settingBox = JOptionPane.showConfirmDialog(null, settingInfo, "Please Enter your settings", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+    	
+    	if (settingBox == JOptionPane.CANCEL_OPTION)
+    	{
+    		System.exit(0);
+    	}
+    	
+    	if (settingBox == JOptionPane.CLOSED_OPTION)
+    	{
+    		System.exit(0);
+    	}
+    	
+    	if (settingBox == JOptionPane.OK_OPTION)
+    	{	
+    	    String value1 = settingSpeed.getText();
+    	    String value2 = settingSize.getText();
+    	    String value3 = settingMin.getText();
+    	    String value4 = settingMax.getText();
+    	    
+    	    try
+    		{
+    	    	Integer.parseInt(value1);
+    	    	Integer.parseInt(value2);
+    	    	Integer.parseInt(value3);
+    	    	Integer.parseInt(value4);
+    	    	isValidNumber = true;
+    		}
+    		catch (NumberFormatException e) 
+    	    {
+    			JOptionPane.showMessageDialog(new JPanel(), "Please enter only numbers", "Error", JOptionPane.ERROR_MESSAGE);
+    	    }
+    	    
+    	    if(isValidNumber == true)
+    	    {
+    	    	growthRateMod = Integer.parseInt(value1);
+    	    	targetSize = Integer.parseInt(value2);
+    	    	difTime = Integer.parseInt(value3);
+    	    	maxTime = Integer.parseInt(value4);
+    	    }
+    	    
+    	}
+    
+    	
+    	
+    	
+    	//Input for circle speed
+    	//input = (String) JOptionPane.showInputDialog(null,"Enter your desired Circle growth rate multiplier (Default = 1)",input, JOptionPane.PLAIN_MESSAGE,null,null,"1");
+    	
+    	
+    	/*
+    	while(isValidNumber == false)
+    	{
+    		try
+    		{
+    			System.out.println(Integer.parseInt(input));
+    	    	isValidNumber = true;
+    		}
+    		catch (NumberFormatException e) 
+    	    {
+    			JOptionPane.showMessageDialog(new JPanel(), "Please enter a number", "Error", JOptionPane.ERROR_MESSAGE);
+    			input = (String) JOptionPane.showInputDialog(null,"Enter the rate at which the circles will grow (Default = 1)",input, JOptionPane.PLAIN_MESSAGE,null,null,"1");
+    	    }
+    	}
+    	growthRateMod = Integer.parseInt(input);
+    	isValidNumber = false;
+    	*/
+    }
+
 
     @Override
     public void keyTyped(KeyEvent e) 
@@ -180,7 +283,23 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     @Override
     public void keyPressed(KeyEvent e) 
     {
-
+    	if(isPaused == false)
+    	{
+        	if(e.getKeyCode() == 32)
+    		{
+    			timer.stop();
+    			isPaused = true;
+    		}
+    	}
+    	else if(isPaused == true)
+    	{
+        	if(e.getKeyCode() == 32)
+    		{
+    			timer.start();
+    			isPaused = false;
+    		}
+    	}
+    		
     }
 
     @Override
@@ -214,7 +333,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     	this.maxTime = maxTime; 
     }
 
-
+    
     public void initListeners()
     {
 
@@ -245,6 +364,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             @Override
             public void mousePressed(MouseEvent e) 
             {
+            	if(lives <=0)
+            	{
+            			reset();
+            			lives = lives+1;
+            			timer.start();
+            	}
                 mousePos.x = e.getX();
                 mousePos.y = e.getY();
                 hitCircle();
