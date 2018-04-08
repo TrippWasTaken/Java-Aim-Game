@@ -1,0 +1,1 @@
+Cursor file must be in the Assignment folder where the .project file is otherwise the cursor will appear as nothing
