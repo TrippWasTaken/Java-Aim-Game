@@ -10,7 +10,7 @@ public class Circle
     private Point position;
     private float radii;
     private boolean expanding = true;
-    private Color color = Color.RED;
+    private Color color = new Color(255, 255, 255);
     private float growthRate = 0.5f;
     private int targetSize = 100;
 
@@ -111,12 +111,6 @@ public class Circle
         {
             this.expanding = false;
         }
-
-        if(this.radii <= 0)
-        {
-            growthRate = 0;
-        }
-
     }
 
     public Color getColor()
