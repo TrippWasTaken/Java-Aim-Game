@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 
+//Gameplay and settings
 public class Gameplay extends JPanel implements KeyListener, ActionListener 
 {
 

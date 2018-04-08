@@ -3,6 +3,7 @@ package com.assignment.main;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+//Main Class creates window
 public class Main 
 {
 
