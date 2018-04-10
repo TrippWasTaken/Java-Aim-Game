@@ -108,9 +108,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             int length = (int) Math.hypot(mousePos.x - (c.getPosition().x + c.getRadii()), mousePos.y - (c.getPosition().y + c.getRadii()));
             if(length <= c.getRadii()+2)
             {
-                //System.out.println("Circle hit");
-                score += 1 * combo;
+                score += 1;
                 combo++;
+                if(combo >= 1)
+                {
+                	score += 1 * combo;
+                }
                 c = null;
                 circles.remove(i);
                 return;
@@ -182,12 +185,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         summonCircle();
         updateCircle();
         repaint();
+        
         if(lives <= 0)
         {
         	circles.clear();
             timer.stop();
         }
-
     }
     
     public void initSettings()
@@ -198,12 +201,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     	JTextField settingSize = new JTextField("50");
     	JTextField settingMin = new JTextField("300");
     	JTextField settingMax = new JTextField("1500");
-    	Object[] settingInfo = {
+    	Object[] settingInfo = 
+    		{
     			"Enter the circle growth rate multiplier (Default = 1)", settingSpeed,
     			"Enter the circle size (Default = 50)", settingSize,
     			"Enter the minimum time (ms) before next circle (Default = 300)", settingMin,
     			"Enter the maximum time (ms) before next circle (Default = 1500)", settingMax,
-    	};
+    		};
     	
     	int settingBox = JOptionPane.showConfirmDialog(null, settingInfo, "Please Enter your settings", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
     	
@@ -243,12 +247,8 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     	    	targetSize = Integer.parseInt(value2);
     	    	difTime = Integer.parseInt(value3);
     	    	maxTime = Integer.parseInt(value4);
-    	    }
-    	    
+    	    }    
     	}
-    
-    	
-    	
     	
     	//Input for circle speed
     	//input = (String) JOptionPane.showInputDialog(null,"Enter your desired Circle growth rate multiplier (Default = 1)",input, JOptionPane.PLAIN_MESSAGE,null,null,"1");
@@ -370,9 +370,12 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             			lives = lives+1;
             			timer.start();
             	}
-                mousePos.x = e.getX();
-                mousePos.y = e.getY();
-                hitCircle();
+            	if(timer.isRunning())
+            	{
+            		mousePos.x = e.getX();
+            		mousePos.y = e.getY();
+            		hitCircle();
+            	}
             }
 
             @Override
