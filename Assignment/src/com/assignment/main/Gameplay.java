@@ -168,9 +168,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
                 {
                 	score += 1 * combo;
                 }
-                c = null;	//if the circle is hit set this to null
+                c = null;
                 circles.remove(i);	//the circle is then removed
-                return;		//return that the circle has been hit
+                return;	
             }
         }
         combo = 0;
@@ -230,7 +230,6 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     		difTime -= 25;
     		maxTime -= 50;
     		incDiff = true;
-    		System.out.println("DiifInc");
     	}
     	
     	if(incDiff == true)

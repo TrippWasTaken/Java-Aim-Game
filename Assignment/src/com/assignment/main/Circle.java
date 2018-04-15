@@ -30,7 +30,11 @@ public class Circle
         {
             this.radii += growthRate;
 
-            if(growthRate%1 == 0)
+            
+            //ensuring the circle is drawn from the centre outwards
+            //the coordinate system needs the circle properties to be integers
+            //the modulos check to keep the circles from moving
+            if(growthRate%1 == 0)	
             {
                 position.x -= growthRate;
                 position.y -= growthRate;
@@ -47,6 +51,7 @@ public class Circle
         else
         {
             this.radii -= growthRate;
+            
             if(growthRate%1 == 0)
             {
                 position.x += growthRate;
@@ -62,6 +67,7 @@ public class Circle
             }
         }
 
+        //Stops expanding once target size is reached and proceeds to shrink
         if(this.radii > targetSize) 
         {
             this.expanding = false;
