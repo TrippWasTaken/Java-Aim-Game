@@ -22,13 +22,7 @@ public class Circle
         this.growthRate = growthRate;
         this.targetSize = targetSize;
     }
-
-    //Growth rate constructor 
-    public void setGrowthRate(float growthRate)
-    {
-        this.growthRate = growthRate;
-    }
-
+    
     //updating circle
     public void update()
     {
