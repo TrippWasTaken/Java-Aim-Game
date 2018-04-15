@@ -42,6 +42,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     private String combobreak = "combo.wav";
     private String pause = "pause.wav";
     private String fail = "fail.wav";
+    private String life = "life.wav";
     
    
     //Growth rate of the circles which can be multiplied by the growthrateMod to incease it
@@ -211,6 +212,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
                 circles.remove(i);
                 combo = 0;
                 playSound(combobreak);
+                playSound(life);
                 lives--;
                 circlesSpawned++;
                 updateAcc();
