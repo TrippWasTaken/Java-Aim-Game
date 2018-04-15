@@ -1,10 +1,14 @@
 package com.assignment.main;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
-
 
 //Gameplay and settings
 public class Gameplay extends JPanel implements KeyListener, ActionListener 
@@ -25,21 +29,37 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     private int startWidth = 4;
     private int minSize = 3;
 
-    // Settings
+    //Settings
     private int growthRateMod = 1;
     private int targetSize = 50;
     private int desiredFPS = 60;
     private int difTime = 300;
     private int maxTime = 1500;
-    private int lives = 5;
+    private int lives = 3;
     
-    //Growth rate of the circles which canbe multiplied by the growthrateMod to incease it
+    //sounds
+    private String hit = "hit.wav";
+    private String combobreak = "combo.wav";
+    private String pause = "pause.wav";
+    private String fail = "fail.wav";
+    
+   
+    //Growth rate of the circles which can be multiplied by the growthrateMod to incease it
     private float growthRate = 0.5f;
     
     ///combo and score variables
     private long score = 0;
     private int combo = 0;
-    
+    private long hiScore;
+    private boolean incDiff = false;
+	private long increase = 500;
+	
+	//Accuracy
+	 private double circlesHit = 0;
+	 private double circlesSpawned = 0;
+	 private double acc = 0;
+	 DecimalFormat df = new DecimalFormat("#.00");
+	 
     //Timer to start game
     private long startTime = System.currentTimeMillis();
     private long lastTime = System.currentTimeMillis();
@@ -59,7 +79,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     //ArrayList for all the circles spawned 
     private ArrayList<Circle> circles = new ArrayList<>();
     
-    //bool for pasuing the game
+    //bool for pausing the game
     private boolean isPaused = false;
 
     //Gameplay class
@@ -72,35 +92,48 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         setFocusTraversalKeysEnabled(false);
         timer = new Timer(delay, this);
         timer.start();
-    }
+    }//end Gameplay()
     
     //Paint class to render and update everything
 	public void paint(Graphics g)
     {
+		//Casting graphics g to graphics2d to allow use of anti-aliasing
+		super.paint(g);
+	      if (g instanceof Graphics2D) 
+	      {
+	         Graphics2D g2 = (Graphics2D) g;
+	         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+	                  RenderingHints.VALUE_ANTIALIAS_ON);
+	      }
 		
-        g.setColor(new Color(40, 40, 40));//Using RGB colours to set colours as they offer more customisation to the standard colour option 
+        g.setColor(new Color(10, 10, 10));//Using RGB colours to set colours as they offer more customisation to the standard colour option 
         g.fillRect(0,0, 1280, 720);
       
         // Labels on the screen 
-        g.setColor(Color.BLACK);
+        g.setColor(new Color(150, 150, 150));
         g.setFont(new Font("Arial", Font.PLAIN, 24));
         g.drawString("Frames: " + frames, 970, 40);
         g.drawString("Time: " + (System.currentTimeMillis() - startTime)/1000, 970, 70);
         g.drawString("Score: " + score, 970, 100);
         g.drawString("Combo: " + combo, 970, 130);
         g.drawString("Lives: " + lives, 970, 160);
-        g.drawString("Click the circles", 970, 220); 
-        g.drawString("Spacebar to pause ", 970, 250);
+        g.drawString("Accuracy: " + df.format(acc) +"%", 970, 190);
+        g.drawString("Click the circles", 970, 250); 
+        g.drawString("Spacebar to pause ", 970, 280);
+        g.drawString("Escape to exit ", 970, 310);
+        g.drawString("Current best score  ", 970, 400);
+        g.drawString(" " + hiScore, 1050, 430);       
         
         //if the lives reach 0 display the game over text appears
         if(lives <= 0)
         {
             g.drawString("Game Over", width*3/4*1/2, height/2);
             g.drawString("Click on the window to go again", width*3/4*1/2-100, height/2+24);
+            playSound(fail);
         }
         
         //Play Area Border
-        g.setColor(Color.BLACK);
+        g.setColor(Color.white);
         g.fillRect(width*3/4,0, 1, 720);
 
         //Rendering the circles
@@ -109,14 +142,16 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             Circle c = circles.get(i);
             g.setColor(c.getColor());
             g.fillOval(c.getPosition().x, c.getPosition().y, (int) c.getRadii()*2, (int) c.getRadii()*2);
+            g.setColor(Color.RED);
+            g.drawOval(c.getPosition().x, c.getPosition().y, (int) c.getRadii()*2, (int) c.getRadii()*2);
         }
         g.dispose();
-    }
+    }//end paint()
 
 	//Checking if the circle is hit when the  mouse is clicked by comparing the circle position to the mouse cursor position
     public void hitCircle()
     {
-        for(int i = 0; i < circles.size(); i++)
+        for(int i = 0; i < circles.size(); i++ )
         {
             Circle c = circles.get(i);
             int length = (int) Math.hypot(mousePos.x - (c.getPosition().x + c.getRadii()), mousePos.y - (c.getPosition().y + c.getRadii()));
@@ -124,7 +159,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             {
                 score += 1;
                 combo++;
-                if(combo >= 1)		//Once the combo is over 1 start multiplying the score by the combo to give the combo some use
+                circlesHit++;
+                circlesSpawned++;
+                playSound(hit);
+                updateAcc();
+                if(combo > 1)		//Once the combo is over 1 start multiplying the score by the combo to give the combo some use
                 {
                 	score += 1 * combo;
                 }
@@ -133,10 +172,11 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
                 return;		//return that the circle has been hit
             }
         }
-        //Otherwise set combo back to 0 and take away a life
-        combo = 0;	
-        lives--;
-    }
+        combo = 0;
+        playSound(combobreak);
+        circlesHit--;
+        updateAcc();
+    }//end hitCircle()
 
     //Spawning the circles
     public void summonCircle()
@@ -146,7 +186,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         {
         	/*
         	 * Creating new circle using 3/4s of the screen because that is the play area and ensuring the circle stays within
-        	 * the window bounds, all the info is taken from constructor which allows the circles to have different growthrates, startwidths
+        	 * the window bounds, all the info is taken from the constructor in the circle class which allows the circles to have different growthrates, startwidths
         	 * and various other properties without having to change the actual circle class.
         	 */
             Circle e = new Circle((int) ((Math.random()* (width*3/4-targetSize*2-border*2 - targetSize+border)) + targetSize+border),
@@ -155,9 +195,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             circles.add(e);
             lastTime = System.currentTimeMillis();
         }
-    }
+    }//end summonCircle()
 
-    //updating the  circle sizes
+    //updating the circles
     public void updateCircle()
     {
         for(int i = 0; i < circles.size(); i++)
@@ -170,26 +210,66 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
                 c = null;
                 circles.remove(i);
                 combo = 0;
+                playSound(combobreak);
                 lives--;
+                circlesSpawned++;
+                updateAcc();
                 return;
             }
             c.update();
-
         }
-    }
+    }//end updateCircles()
     
-    //after the game is lost this function resets the whole window back to the start by resetting all values
+    //Increasing difficulty relative to the score
+    public void incDif()
+    {
+    	if(score >= increase)
+    	{
+    		difTime -= 25;
+    		maxTime -= 50;
+    		incDiff = true;
+    		System.out.println("DiifInc");
+    	}
+    	
+    	if(incDiff == true)
+    	{
+    		increase += increase*1.25;
+    		incDiff = false;
+    	}
+    }//end incDiff()
+    
+    //Updating acc
+    private void updateAcc()
+    {
+    	if(circlesHit < 0)
+    	{
+    		circlesHit = 0;
+    	}
+    	
+        if(circlesSpawned != 0)
+        {
+            acc = 100 * (circlesHit/circlesSpawned);
+        }
+        else
+        {
+        	acc = 0;
+        }
+    }//end updateAcc()
+    
+    //after the game is lost this function resets the whole window by resetting all values
     public void reset() 
     {
         circles.clear();
-        lives = 5;
+        lives = 3;
         score = 0;
         combo = 0;
+        circlesHit = 0;
+        circlesSpawned = 0;
         startTime = System.currentTimeMillis();
         lastTime = System.currentTimeMillis();
-    }
+    }//end reset()
 
-    @Override
+    //starting the game
     public void actionPerformed(ActionEvent e) 
     {
         timer.start();
@@ -198,6 +278,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         {
             frames = frameCount;
             frameCount = 0;
+            incDif();
             frameTime = System.currentTimeMillis();
         }
         summonCircle();
@@ -207,6 +288,10 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         //if the lives are equal to 0 the circles clear and the timer stops.
         if(lives <= 0)
         {
+        	if(score >= hiScore)
+        	{
+        		hiScore = score;
+        	}
         	circles.clear();
             timer.stop();
         }
@@ -278,8 +363,25 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     		}
     	}
     }//end of settingsInit
-
     
+    
+    //Playing any sound
+    public void playSound(String sound) 
+    {
+    	//if the sound isnt found only prints an error in the console, game is still playable
+        try 
+        {
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(new File(sound));
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioInputStream);
+            clip.start();
+        }
+        catch(Exception e) 
+        {
+            System.out.println("Error with playing sound.");
+        }
+    }
+    //Key Listeners
     @Override
     public void keyTyped(KeyEvent e) 
     {
@@ -290,23 +392,30 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     public void keyPressed(KeyEvent e) 
     {
     	//isPaused is used to allow toggling pausing using only 1 key
-    	if(isPaused == false)
+    	if(isPaused == false && lives > 0 )
     	{
         	if(e.getKeyCode() == 32)
     		{
+        		playSound(pause);
     			timer.stop();
     			isPaused = true;	//set this to true to allow the next keypress to unpause
     		}
     	}
-    	else if(isPaused == true)
+    	else if(isPaused == true && lives > 0)
     	{
         	if(e.getKeyCode() == 32)
     		{
+        		playSound(pause);
     			timer.start();
     			isPaused = false;	//Reset  the boolean
     		}
     	}
-    		
+    	
+    	//Exiting game by pressing escape key
+    	if(e.getKeyCode() == 27)
+		{
+    		System.exit(0);
+		}
     }
     
     @Override
@@ -340,7 +449,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     	this.maxTime = maxTime; 
     }
     
-    //Initiating the mouse and key listeners
+    //Initiating the mouse
     public void initListeners()
     {
 
@@ -375,10 +484,9 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
             	if(lives <=0)
             	{
             			reset();
-            			lives = lives+1;
             			timer.start();
             	}
-            	//Only register hitcircles when the timer is running, This stops from being able to pause the game and still hit cirlces
+            	//Only register hitcircle when the timer is running, This stops from being able to pause the game and still hit circles
             	if(timer.isRunning())
             	{
             		mousePos.x = e.getX();
