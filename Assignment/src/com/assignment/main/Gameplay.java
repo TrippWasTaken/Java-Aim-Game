@@ -366,7 +366,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     }//end of settingsInit
     
     
-    //Playing any sound
+    //Playing any sounds
     public void playSound(String sound) 
     {
     	//if the sound isnt found only prints an error in the console, game is still playable

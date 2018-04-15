@@ -23,7 +23,7 @@ public class Circle
         this.targetSize = targetSize;
     }
     
-    //updating circle
+    //updating circle object
     public void update()
     {
         if(this.expanding)
