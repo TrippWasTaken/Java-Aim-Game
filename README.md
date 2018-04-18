@@ -1,3 +1,6 @@
+# github_assignment
+Java Aim Game for programming assignment
+
 Konrad Knecht
 C16395636
 DT211C/2 OOP ASSIGNMENT
