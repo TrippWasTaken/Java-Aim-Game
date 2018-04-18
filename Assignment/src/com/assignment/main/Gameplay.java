@@ -6,9 +6,16 @@ import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 //Gameplay and settings
 public class Gameplay extends JPanel implements KeyListener, ActionListener 
@@ -49,11 +56,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     private float growthRate = 0.5f;
     
     ///combo and score variables
-    private long score = 0;
+    private int score = 0;
     private int combo = 0;
-    private long hiScore;
+    private int hiScore;
+    private String printScore;
+    private File file = new File("Score.txt");
     private boolean incDiff = false;
-	private long increase = 500;
+	private int increase = 500;
 	
 	//Accuracy
 	 private double circlesHit = 0;
@@ -93,6 +102,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         setFocusTraversalKeysEnabled(false);
         timer = new Timer(delay, this);
         timer.start();
+        printFile();
     }//end Gameplay()
     
     //Paint class to render and update everything
@@ -123,7 +133,7 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         g.drawString("Spacebar to pause ", 970, 280);
         g.drawString("Escape to exit ", 970, 310);
         g.drawString("Current best score  ", 970, 400);
-        g.drawString(" " + hiScore, 1050, 430);       
+        g.drawString(" " + printScore, 1050, 430);       
         
         //if the lives reach 0 display the game over text appears
         if(lives <= 0)
@@ -239,6 +249,43 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
     	}
     }//end incDiff()
     
+    
+    //writing to a file
+    public void writeFile() throws IOException
+    {
+    	file.createNewFile();
+    	FileWriter writer = new FileWriter(file);
+    	String scoreWrite = Integer.toString(hiScore);
+    	
+    	writer.write(scoreWrite); 
+        writer.flush();
+        writer.close();
+        
+        printFile();
+    }//end writeFile()
+    
+    
+    //Printing the contents of the file to keep the highscore
+    public void printFile() 
+    {
+    	try 
+    	{
+			FileReader fileReader = new FileReader(file);
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			StringBuffer stringBuffer = new StringBuffer();
+
+			printScore = bufferedReader.readLine();
+			
+			hiScore = Integer.parseInt(printScore);
+		} 
+    	catch (IOException e) 
+    	{
+			e.printStackTrace();
+		}
+    }//end printFile()
+    
+    
+    
     //Updating acc
     private void updateAcc()
     {
@@ -292,6 +339,13 @@ public class Gameplay extends JPanel implements KeyListener, ActionListener
         	if(score >= hiScore)
         	{
         		hiScore = score;
+        		
+        		try {
+					writeFile();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
         	}
         	circles.clear();
             timer.stop();
